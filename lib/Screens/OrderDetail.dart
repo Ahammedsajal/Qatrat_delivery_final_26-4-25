@@ -7,12 +7,12 @@ import 'package:http/http.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../Helper/AppBtn.dart';
-
 import '../Helper/Color.dart';
 import '../Helper/Constant.dart';
 import '../Helper/Session.dart';
 import '../Helper/String.dart';
 import '../Model/Order_Model.dart';
+import 'package:image_picker/image_picker.dart';
 
 class OrderDetail extends StatefulWidget {
   final Order_Model? model;
@@ -47,6 +47,13 @@ class StateOrder extends State<OrderDetail> with TickerProviderStateMixin {
   bool? _isReturnable;
   final bool _isLoading = true;
   bool _isProgress = false;
+  List<XFile> _deliveryImages = [];
+final ImagePicker _picker = ImagePicker();
+double safeParse(String? value) {
+  if (value == null || value.isEmpty) return 0.0;
+  return double.tryParse(value) ?? 0.0;
+}
+
   String? curStatus;
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   TextEditingController? otpC;
@@ -134,293 +141,286 @@ class StateOrder extends State<OrderDetail> with TickerProviderStateMixin {
     );
   }
 
-  @override
-  Widget build(final BuildContext context) {
-    deviceHeight = MediaQuery.of(context).size.height;
-    deviceWidth = MediaQuery.of(context).size.width;
-    final Order_Model model = widget.model!;
-    String? pDate;
-    String? prDate;
-    String? sDate;
-    String? dDate;
-    String? cDate;
-    String? rDate;
-    if (model.listStatus!.contains(PLACED)) {
-      pDate = model.listDate![model.listStatus!.indexOf(
-        PLACED,
-      )];
-      if (pDate != "") {
-        final List d = pDate!.split(" ");
-        pDate = d[0] + "\n" + d[1];
-      }
+ @override
+Widget build(final BuildContext context) {
+  deviceHeight = MediaQuery.of(context).size.height;
+  deviceWidth = MediaQuery.of(context).size.width;
+  final Order_Model model = widget.model!;
+
+  String? pDate, prDate, sDate, dDate, cDate, rDate;
+  if (model.listStatus!.contains(PLACED)) {
+    pDate = model.listDate![model.listStatus!.indexOf(PLACED)];
+    if (pDate != "") {
+      final List d = pDate!.split(" ");
+      pDate = d[0] + "\n" + d[1];
     }
-    if (model.listStatus!.contains(PROCESSED)) {
-      prDate = model.listDate![model.listStatus!.indexOf(PROCESSED)];
-      if (prDate != "") {
-        final List d = prDate!.split(" ");
-        prDate = d[0] + "\n" + d[1];
-      }
+  }
+  if (model.listStatus!.contains(PROCESSED)) {
+    prDate = model.listDate![model.listStatus!.indexOf(PROCESSED)];
+    if (prDate != "") {
+      final List d = prDate!.split(" ");
+      prDate = d[0] + "\n" + d[1];
     }
-    if (model.listStatus!.contains(SHIPED)) {
-      sDate = model.listDate![model.listStatus!.indexOf(SHIPED)];
-      if (sDate != "") {
-        final List d = sDate!.split(" ");
-        sDate = d[0] + "\n" + d[1];
-      }
+  }
+  if (model.listStatus!.contains(SHIPED)) {
+    sDate = model.listDate![model.listStatus!.indexOf(SHIPED)];
+    if (sDate != "") {
+      final List d = sDate!.split(" ");
+      sDate = d[0] + "\n" + d[1];
     }
-    if (model.listStatus!.contains(DELIVERD)) {
-      dDate = model.listDate![model.listStatus!.indexOf(DELIVERD)];
-      if (dDate != "") {
-        final List d = dDate!.split(" ");
-        dDate = d[0] + "\n" + d[1];
-      }
+  }
+  if (model.listStatus!.contains(DELIVERD)) {
+    dDate = model.listDate![model.listStatus!.indexOf(DELIVERD)];
+    if (dDate != "") {
+      final List d = dDate!.split(" ");
+      dDate = d[0] + "\n" + d[1];
     }
-    if (model.listStatus!.contains(CANCLED)) {
-      cDate = model.listDate![model.listStatus!.indexOf(CANCLED)];
-      if (cDate != "") {
-        final List d = cDate!.split(" ");
-        cDate = d[0] + "\n" + d[1];
-      }
+  }
+  if (model.listStatus!.contains(CANCLED)) {
+    cDate = model.listDate![model.listStatus!.indexOf(CANCLED)];
+    if (cDate != "") {
+      final List d = cDate!.split(" ");
+      cDate = d[0] + "\n" + d[1];
     }
-    if (model.listStatus!.contains(RETURNED)) {
-      rDate = model.listDate![model.listStatus!.indexOf(RETURNED)];
-      if (rDate != "") {
-        final List d = rDate!.split(" ");
-        rDate = d[0] + "\n" + d[1];
-      }
+  }
+  if (model.listStatus!.contains(RETURNED)) {
+    rDate = model.listDate![model.listStatus!.indexOf(RETURNED)];
+    if (rDate != "") {
+      final List d = rDate!.split(" ");
+      rDate = d[0] + "\n" + d[1];
     }
-    _isCancleable = model.isCancleable == "1" ? true : false;
-    _isReturnable = model.isReturnable == "1" ? true : false;
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Theme.of(context).colorScheme.lightWhite,
-      appBar: getAppBar(
-        getTranslated(context, ORDER_DETAIL)!,
-        context,
-      ),
-      body: _isNetworkAvail
-          ? Stack(
-              children: [
-                Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: controller,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: [
-                              Card(
-                                elevation: 0,
-                                child: Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  padding: const EdgeInsets.all(12.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "${getTranslated(context, ORDER_ID_LBL)!} - ${model.id!}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall!
-                                            .copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .lightfontColor2,
-                                            ),
-                                      ),
-                                      Text(
-                                        "${getTranslated(context, ORDER_DATE)!} - ${model.orderDate!}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall!
-                                            .copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .lightfontColor2,
-                                            ),
-                                      ),
-                                      Text(
-                                        "${getTranslated(context, PAYMENT_MTHD)!} - ${model.payMethod!}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall!
-                                            .copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .lightfontColor2,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
+  }
+
+  _isCancleable = model.isCancleable == "1";
+  _isReturnable = model.isReturnable == "1";
+
+  return Scaffold(
+    key: _scaffoldKey,
+    backgroundColor: Theme.of(context).colorScheme.lightWhite,
+    appBar: getAppBar(getTranslated(context, ORDER_DETAIL)!, context),
+    body: _isNetworkAvail
+        ? Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: controller,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Card(
+                              elevation: 0,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width,
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("${getTranslated(context, ORDER_ID_LBL)!} - ${model.id!}",
+                                        style: Theme.of(context).textTheme.titleSmall!.copyWith(color: Theme.of(context).colorScheme.lightfontColor2)),
+                                    Text("${getTranslated(context, ORDER_DATE)!} - ${model.orderDate!}",
+                                        style: Theme.of(context).textTheme.titleSmall!.copyWith(color: Theme.of(context).colorScheme.lightfontColor2)),
+                                    Text("${getTranslated(context, PAYMENT_MTHD)!} - ${model.payMethod!}",
+                                        style: Theme.of(context).textTheme.titleSmall!.copyWith(color: Theme.of(context).colorScheme.lightfontColor2)),
+                                  ],
                                 ),
                               ),
-                              if (model.delDate != "" &&
-                                  model.delDate!.isNotEmpty)
-                                Card(
-                                  elevation: 0,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Text(
-                                      "${getTranslated(context, PREFER_DATE_TIME)!}: ${model.delDate!} - ${model.delTime!}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall!
-                                          .copyWith(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .lightfontColor2,
-                                          ),
-                                    ),
+                            ),
+                            if (model.delDate != "" && model.delDate!.isNotEmpty)
+                              Card(
+                                elevation: 0,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text("${getTranslated(context, PREFER_DATE_TIME)!}: ${model.delDate!} - ${model.delTime!}",
+                                      style: Theme.of(context).textTheme.titleSmall!.copyWith(color: Theme.of(context).colorScheme.lightfontColor2)),
+                                ),
+                              )
+                            else
+                              Container(),
+                            ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: model.itemList!.length,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemBuilder: (context, i) => productItem(model.itemList![i], model, i),
+                            ),
+                            shippingDetails(),
+                            priceDetails(),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: _pickDeliveryImages,
+                                    icon: const Icon(Icons.photo_library),
+                                    label: const Text("Attach Delivery Images"),
                                   ),
-                                )
-                              else
-                                Container(),
-                              ListView.builder(
-                                padding: EdgeInsets.zero,
-                                shrinkWrap: true,
-                                itemCount: model.itemList!.length,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemBuilder: (final context, final i) {
-                                  final OrderItem orderItem =
-                                      model.itemList![i];
-                                  return productItem(orderItem, model, i);
-                                },
+                                  if (_deliveryImages.isNotEmpty)
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: _deliveryImages.map((image) {
+                                        return Stack(
+                                          alignment: Alignment.topRight,
+                                          children: [
+                                            Image.file(File(image.path), width: 80, height: 80, fit: BoxFit.cover),
+                                            IconButton(
+                                              icon: const Icon(Icons.cancel, color: Colors.red),
+                                              onPressed: () => setState(() => _deliveryImages.remove(image)),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
+                                ],
                               ),
-                              shippingDetails(),
-                              priceDetails(),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: DropdownButtonFormField(
-                                dropdownColor:
-                                    Theme.of(context).colorScheme.lightWhite,
-                                iconEnabledColor:
-                                    Theme.of(context).colorScheme.fontColor,
-                                hint: Text(
-                                  getTranslated(context, UpdateStatus)!,
-                                  style: Theme.of(this.context)
-                                      .textTheme
-                                      .titleSmall!
-                                      .copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .fontColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  isDense: true,
-                                  fillColor:
-                                      Theme.of(context).colorScheme.lightWhite,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                    horizontal: 10,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .fontColor,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: DropdownButtonFormField(
+                              dropdownColor: Theme.of(context).colorScheme.lightWhite,
+                              iconEnabledColor: Theme.of(context).colorScheme.fontColor,
+                              hint: Text(
+                                getTranslated(context, UpdateStatus)!,
+                                style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                                      color: Theme.of(context).colorScheme.fontColor,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                  ),
-                                ),
-                                value: statusList
-                                        .contains(widget.model!.activeStatus)
-                                    ? widget.model!.activeStatus
-                                    : RETURNED,
-                                onChanged: (final dynamic newValue) {
-                                  setState(
-                                    () {
-                                      curStatus = newValue;
-                                    },
-                                  );
-                                },
-                                items: statusList.map(
-                                  (final String st) {
-                                    return DropdownMenuItem<String>(
-                                      value: st,
-                                      child: Text(
-                                        capitalize(st),
-                                        style: Theme.of(this.context)
-                                            .textTheme
-                                            .titleSmall!
-                                            .copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .fontColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                    );
-                                  },
-                                ).toList(),
                               ),
+                              decoration: InputDecoration(
+                                filled: true,
+                                isDense: true,
+                                fillColor: Theme.of(context).colorScheme.lightWhite,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.fontColor)),
+                              ),
+                              value: statusList.contains(widget.model!.activeStatus) ? widget.model!.activeStatus : RETURNED,
+                              onChanged: (dynamic newValue) => setState(() => curStatus = newValue),
+                              items: statusList.map((String st) => DropdownMenuItem<String>(value: st, child: Text(capitalize(st)))).toList(),
                             ),
                           ),
-                          RawMaterialButton(
-                            constraints: const BoxConstraints.expand(
-                              width: 42,
-                              height: 42,
-                            ),
-                            onPressed: () {
-                              if (model.otp != "" &&
-                                  model.otp!.isNotEmpty &&
-                                  model.otp != "0" &&
-                                  curStatus == DELIVERD) {
-                                otpDialog(
-                                  curStatus,
-                                  model.otp,
-                                  model.id,
-                                  false,
-                                  0,
-                                );
-                              } else {
-                                updateOrder(
-                                  curStatus,
-                                  updateOrderApi,
-                                  model.id,
-                                  false,
-                                  0,
-                                );
-                              }
-                            },
-                            fillColor: Theme.of(context).colorScheme.fontColor,
-                            padding: const EdgeInsets.only(left: 5),
-                            shape: const CircleBorder(),
-                            child: Align(
-                              child: Icon(
-                                Icons.send,
-                                size: 20,
-                                color: Theme.of(context).colorScheme.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+RawMaterialButton(
+  constraints: const BoxConstraints.expand(
+    width: 42,
+    height: 42,
+  ),
+  onPressed: () {
+    if (curStatus == DELIVERD) {
+      if (_deliveryImages.length < 2) {
+        setSnackbar("Please attach at least 2 delivery images.");
+      } else {
+        updateOrderWithImages(curStatus, model.id, _deliveryImages);
+      }
+    } else {
+      updateOrder(curStatus, updateOrderApi, model.id, false, 0);
+    }
+  },
+  fillColor: Theme.of(context).colorScheme.fontColor,
+  padding: const EdgeInsets.only(left: 5),
+  shape: const CircleBorder(),
+  child: Align(
+    child: Icon(
+      Icons.send,
+      size: 20,
+      color: Theme.of(context).colorScheme.white,
+    ),
+  ),
+),
+                      ],
                     ),
-                  ],
-                ),
-                showCircularProgress(
-                  _isProgress,
-                  Theme.of(context).colorScheme.primarytheme,
-                ),
-              ],
-            )
-          : noInternet(context),
-    );
+                  ),
+                ],
+              ),
+              showCircularProgress(_isProgress, Theme.of(context).colorScheme.primarytheme),
+            ],
+          )
+        : noInternet(context),
+  );
+}
+
+
+    
+  Future<void> updateOrderWithImages(
+  String? status,
+  String? id,
+  List<XFile> images,
+) async {
+  _isNetworkAvail = await isNetworkAvailable();
+  if (_isNetworkAvail) {
+    try {
+      setState(() => _isProgress = true);
+
+      final request = MultipartRequest("POST", updateOrderApi);
+      request.fields[ORDERID] = id!;
+      request.fields[STATUS] = status!;
+      request.fields[DEL_BOY_ID] = CUR_USERID!;
+
+      for (int i = 0; i < images.length; i++) {
+        request.files.add(await MultipartFile.fromPath(
+          "delivery_images[]",
+          images[i].path,
+        ));
+      }
+
+      request.headers.addAll(headers);
+
+      // Print statement for debugging:
+      print("=== Sending order delivery details ===");
+      print("Order ID: ${request.fields[ORDERID]}");
+      print("Status: ${request.fields[STATUS]}");
+      print("Delivery Boy ID: ${request.fields[DEL_BOY_ID]}");
+      for (int i = 0; i < images.length; i++) {
+        print("Image ${i + 1}: ${images[i].path}");
+      }
+      print("Headers: ${request.headers}");
+      print("=== End of order details ===");
+
+      final streamedResponse = await request.send();
+      final response = await Response.fromStream(streamedResponse);
+      final getdata = json.decode(response.body);
+      final bool error = getdata["error"];
+      final String msg = getdata["message"];
+
+      setSnackbar(msg);
+      if (!error) {
+        widget.model!.activeStatus = status;
+      }
+      setState(() => _isProgress = false);
+    } catch (e) {
+      print("Exception caught: $e");
+      setSnackbar(getTranslated(context, somethingMSg)!);
+      setState(() => _isProgress = false);
+    }
+  } else {
+    setState(() => _isNetworkAvail = false);
   }
+}
+
+
+
+Future<void> _pickDeliveryImages() async {
+  final List<XFile>? images = await _picker.pickMultiImage();
+  if (images != null) {
+    setState(() {
+      _deliveryImages = images.take(5).toList(); // limit to max 5
+    });
+  }
+}
+
 
   otpDialog(
     final String? curSelected,
@@ -582,12 +582,12 @@ class StateOrder extends State<OrderDetail> with TickerProviderStateMixin {
   return Card(
     elevation: 0,
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(0, 15.0, 0, 15.0),
+      padding: const EdgeInsets.symmetric(vertical: 15.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 15.0, right: 15.0),
+            padding: const EdgeInsets.symmetric(horizontal: 15.0),
             child: Text(
               getTranslated(context, PRICE_DETAIL)!,
               style: Theme.of(context).textTheme.titleSmall!.copyWith(
@@ -597,78 +597,47 @@ class StateOrder extends State<OrderDetail> with TickerProviderStateMixin {
             ),
           ),
           const Divider(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-            child: _priceRow(
-              getTranslated(context, PRICE_LBL)!,
-              double.tryParse(widget.model!.subTotal ?? '0') ?? 0,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-            child: _priceRow(
-              getTranslated(context, DELIVERY_CHARGE_LBL)!,
-              double.tryParse(widget.model!.delCharge ?? '0') ?? 0,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-            child: _priceRow(
-              "${getTranslated(context, TAXPER)!} (${widget.model!.taxPer ?? '0'})",
-              double.tryParse(widget.model!.taxAmt ?? '0') ?? 0,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-            child: _priceRow(
-              getTranslated(context, PROMO_CODE_DIS_LBL)!,
-              -(double.tryParse(widget.model!.promoDis ?? '0') ?? 0),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-            child: _priceRow(
-              getTranslated(context, WALLET_BAL)!,
-              -(double.tryParse(widget.model!.walBal ?? '0') ?? 0),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
-            child: _priceRow(
-              getTranslated(context, TOTAL_PRICE)!,
-              double.tryParse(widget.model!.total ?? '0') ?? 0,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
-            child: _priceRow(
-              getTranslated(context, TOTAL_AMOUNT)!,
-              double.tryParse(widget.model!.payable ?? '0') ?? 0,
-              isBold: true,
-            ),
-          ),
+          buildPriceRow(getTranslated(context, PRICE_LBL)!, widget.model!.subTotal),
+          buildPriceRow(getTranslated(context, DELIVERY_CHARGE_LBL)!, widget.model!.delCharge),
+          buildPriceRow(getTranslated(context, TOTAL_PRICE)!, widget.model!.total),
+          buildPriceRow(getTranslated(context, TOTAL_AMOUNT)!, widget.model!.payable, isBold: true),
         ],
       ),
     ),
   );
 }
 
-// Helper function for rendering price rows
-Widget _priceRow(String label, double amount, {bool isBold = false}) {
-  final style = Theme.of(context).textTheme.labelLarge!.copyWith(
-        color: isBold
-            ? Theme.of(context).colorScheme.lightfontColor
-            : Theme.of(context).colorScheme.lightfontColor2,
-        fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-      );
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text("$label :", style: style),
-      Text(getPriceFormat(context, amount)!, style: style),
-    ],
+Widget buildPriceRow(String title, String? value, {bool isBold = false}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 2.5),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          "$title :",
+          style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                color: isBold
+                    ? Theme.of(context).colorScheme.lightfontColor
+                    : Theme.of(context).colorScheme.lightfontColor2,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              ),
+        ),
+        Text(
+          getPriceFormat(context, safeParse(value))!,
+          style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                color: isBold
+                    ? Theme.of(context).colorScheme.lightfontColor
+                    : Theme.of(context).colorScheme.lightfontColor2,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              ),
+        ),
+      ],
+    ),
   );
 }
+
+
+
 
   shippingDetails() {
     return Card(
@@ -706,11 +675,12 @@ Widget _priceRow(String label, double amount, {bool isBold = false}) {
                         color: Theme.of(context).colorScheme.fontColor,
                       ),
                       onPressed: () {
-                        _launchMap(
-                          widget.model!.latitude,
-                          widget.model!.longitude,
-                        );
-                      },
+  _showNavigationOptions(
+    widget.model!.latitude,
+    widget.model!.longitude,
+  );
+},
+
                     ),
                   ),
                 ],
@@ -1165,62 +1135,120 @@ Widget _priceRow(String label, double amount, {bool isBold = false}) {
       ),
     );
   }
+/// Opens an action-sheet (Android bottom-sheet / iOS CupertinoActionSheet)
+/// so the delivery boy can pick Google Maps or Waze.
+void _showNavigationOptions(String? lat, String? lng) async {
+  final String latitude  = lat  ?? '';
+  final String longitude = lng ?? '';
+
+  if (latitude.isEmpty || longitude.isEmpty) {
+    setSnackbar('Location unavailable');
+    return;
+  }
+
+  /// Helper: try to open an intent / universal-link and
+  /// show a Snackbar if the target app is missing.
+  Future<void> _launch(Uri uri, String appName) async {
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      setSnackbar('$appName is not installed');
+    }
+  }
+
+  // Build our two URIs ------------------------------------------------------
+  final Uri googleMapsUri = Uri.parse(
+    Platform.isAndroid
+        ? 'google.navigation:q=$latitude,$longitude&mode=d'
+        : 'comgooglemaps://?daddr=$latitude,$longitude&directionsmode=driving',
+  );
+
+  // Waze uses a custom scheme on both platforms
+  final Uri wazeUri = Uri.parse(
+    'waze://?ll=$latitude,$longitude&navigate=yes',
+  );
+
+  // Show platform-aware sheet ----------------------------------------------
+  if (Platform.isIOS) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (_) => CupertinoActionSheet(
+        title: const Text('Navigate with'),
+        actions: [
+          CupertinoActionSheetAction(
+            child: const Text('Google Maps'),
+            onPressed: () {
+              Navigator.pop(context);
+              _launch(googleMapsUri, 'Google Maps');
+            },
+          ),
+          CupertinoActionSheetAction(
+            child: const Text('Waze'),
+            onPressed: () {
+              Navigator.pop(context);
+              _launch(wazeUri, 'Waze');
+            },
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          child: const Text('Cancel'),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+    );
+  } else {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.map),
+              title: const Text('Google Maps'),
+              onTap: () {
+                Navigator.pop(context);
+                _launch(googleMapsUri, 'Google Maps');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.directions_car_filled),
+              title: const Text('Waze'),
+              onTap: () {
+                Navigator.pop(context);
+                _launch(wazeUri, 'Waze');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 
-Future<void> updateOrder(
-  final String? status,
-  final Uri api,
-  final String? id,
-  final bool item,
-  final int index, {
-  List<String>? imagePaths, // Optional parameter for image file paths
-}) async {
-  _isNetworkAvail = await isNetworkAvailable();
-  if (_isNetworkAvail) {
-    try {
-      setState(() {
-        _isProgress = true;
-      });
-      final parameter = {
-        ORDERID: id,
-        STATUS: status,
-        DEL_BOY_ID: CUR_USERID,
-      };
-      if (item) parameter[ORDERITEMID] = widget.model!.itemList![index].id;
 
-      // If imagePaths are provided, send a multipart request
-      if (imagePaths != null && imagePaths.isNotEmpty) {
-        var request = MultipartRequest("POST", api);
-request.fields.addAll(
-  parameter.map((key, value) => MapEntry(key, value ?? ''))
-);
-        // Attach each image file to the request
-        for (var path in imagePaths) {
-          if (path != null) {
-            File file = File(path);
-            var stream = MultipartFile.fromBytes(
-              'images[]', // field name for images (adjust as needed by your backend)
-              await file.readAsBytes(),
-filename: file.path.split('/').last,
-            );
-            request.files.add(stream);
-          }
-        }
-        var streamedResponse = await request.send();
-        var response = await Response.fromStream(streamedResponse);
-        final getdata = json.decode(response.body);
-        final bool error = getdata["error"];
-        final String msg = getdata["message"];
-        setSnackbar(msg);
-        if (!error) {
-          if (item) {
-            widget.model!.itemList![index].status = status;
-          } else {
-            widget.model!.activeStatus = status;
-          }
-        }
-      } else {
-        // Fallback to the basic POST if no images are provided
+  Future<void> updateOrder(
+    final String? status,
+    final Uri api,
+    final String? id,
+    final bool item,
+    final int index,
+  ) async {
+    _isNetworkAvail = await isNetworkAvailable();
+    if (_isNetworkAvail) {
+      try {
+        setState(
+          () {
+            _isProgress = true;
+          },
+        );
+        final parameter = {
+          ORDERID: id,
+          STATUS: status,
+          DEL_BOY_ID: CUR_USERID,
+        };
+        if (item) parameter[ORDERITEMID] = widget.model!.itemList![index].id;
         final Response response = await post(
           item ? updateOrderItemApi : updateOrderApi,
           body: parameter,
@@ -1239,20 +1267,24 @@ filename: file.path.split('/').last,
             widget.model!.activeStatus = status;
           }
         }
+        setState(
+          () {
+            _isProgress = false;
+          },
+        );
+      } on TimeoutException catch (_) {
+        setSnackbar(
+          getTranslated(context, somethingMSg)!,
+        );
       }
-      setState(() {
-        _isProgress = false;
-      });
-    } on TimeoutException catch (_) {
-      setSnackbar(getTranslated(context, somethingMSg)!);
+    } else {
+      setState(
+        () {
+          _isNetworkAvail = false;
+        },
+      );
     }
-  } else {
-    setState(() {
-      _isNetworkAvail = false;
-    });
   }
-}
-
 
   _launchCaller() async {
     final url = "tel:${widget.model!.mobile}";
